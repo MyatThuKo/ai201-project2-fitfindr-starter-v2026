@@ -211,11 +211,39 @@ Scored these vintage Levi's 501 jeans on depop for only $38 and they fit like an
 
 ## Stretch Feature — Fourth Tool
 
-I plan to add a fourth tool named `compare_prices`.
+### `compare_prices`
 
-`compare_prices(selected_item, search_results)` will compare the selected listing's price with the prices of the other retrieved listings. It will return the selected item's price, the average price of the retrieved results, the difference from that average, and whether the selected item is below, equal to, or above the average.
+- **What it does:** Compares the selected listing's price with the prices of the _other_ listings `search_listings` returned. It does not call the model.
+- **Inputs:** `selected_item` (dict), `search_results` (list[dict]). The selected item is left out of the average by its `id`.
+- **Returns:** A dict with `selected_price` (float), `average_price` (float), `difference` (float, selected minus average), `position` (`"below"`, `"equal"`, or `"above"`), `compared_with` (int, how many listings were averaged), and `summary` (a one-sentence str).
+- **When it has nothing:** If the search returned only the selected item, `position` is `"no comparison"`, `average_price` and `difference` are `None`, and `compared_with` is `0`. It does not raise.
 
-The agent will call this tool after choosing `session["selected_item"]` and before calling `suggest_outfit`.
+**Where it runs:** `agent.py::run_agent` calls it after choosing `session["selected_item"]` and before `suggest_outfit`. The result is stored in `session["price_comparison"]`. On the empty-search path it never runs, because the loop stops first.
+
+**A run where the agent called it**
+
+```
+$ python app.py ask 'vintage graphic tee under $30'
+
+  Found:    Y2K Baby Tee — Butterfly Print — $18.0 on depop
+  Price:    $18.00 — $3.33 below the $21.33 average of 9 other matches.
+
+  Outfit:   Y2K Street
+- Y2K Baby Tee — Butterfly Print
+- Baggy straight-leg jeans, dark wash
+- Chunky white sneakers
+- Black crossbody bag
+...
+```
+
+**The empty case**
+
+```
+$ python app.py ask 'jeans size W30'
+
+  Found:    Vintage Levi's 501 Jeans — Medium Wash — $38.0 on depop
+  Price:    $38.00 — no other matching listings to compare against.
+```
 
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
