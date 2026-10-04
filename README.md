@@ -207,6 +207,16 @@ Scored these vintage Levi's 501 jeans on depop for only $38 and they fit like an
 - _What came back:_ One caption for the Y2K Baby Tee said "I just listed it on depop" as if the poster were selling the item.
 - _What I changed:_ I added a rule to the prompt stating that the poster bought the item and is not selling it. Three more runs on the same item all described it as a purchase.
 
+---
+
+## Stretch Feature — Fourth Tool
+
+I plan to add a fourth tool named `compare_prices`.
+
+`compare_prices(selected_item, search_results)` will compare the selected listing's price with the prices of the other retrieved listings. It will return the selected item's price, the average price of the retrieved results, the difference from that average, and whether the selected item is below, equal to, or above the average.
+
+The agent will call this tool after choosing `session["selected_item"]` and before calling `suggest_outfit`.
+
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
      Don't fill these in during unit 3.
