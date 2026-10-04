@@ -59,24 +59,24 @@
 
 ### `search_listings`
 
-- **What it does:**
-- **Inputs:** <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Searches the available clothing listings using the user's description, requested size, and maximum price. Results are ranked by keyword overlap with `description`, highest score first.
+- **Inputs:** `description` (str), `size` (str or None), `max_price` (float or None). `max_price` is inclusive. If `size` or `max_price` is `None`, that filter is skipped. Size matching is case-insensitive and uses complete size tokens, so `M` can match `M`, `S/M`, or `M/L`, but not `XL` or `US 9`. I will treat `One Size` as matching any requested size.
+- **Returns:** Up to `config.SEARCH_RESULT_LIMIT` matching listing dictionaries, best match first. Listings scoring 0 for keyword overlap are excluded. Each dictionary contains `id`, `title`, `description`, `category`, `style_tags`, `size`, `condition`, `price` (float), `colors`, `brand` (str or None), and `platform`.
+- **When it has nothing:** Returns an empty list `[]`.
 
 ### `suggest_outfit`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Takes the selected thrift listing and the user's wardrobe and suggests one or two outfits using the new item with pieces the user already owns.
+- **Inputs:** `new_item` (dict), `wardrobe` (dict containing an `items` list).
+- **Returns:** A non-empty string containing one or two outfit suggestions. When the wardrobe is not empty, each suggestion names specific wardrobe pieces by their `name` and explains why they work with the new item.
+- **When it has nothing:** If `wardrobe["items"]` is empty, returns general styling advice for the new item instead of raising an error or returning an empty string.
 
 ### `create_fit_card`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Creates a short social-style caption about the selected thrift item and suggested outfit. It must not assume that the listing has a brand.
+- **Inputs:** `outfit` (str), `new_item` (dict). `new_item["brand"]` may be `None`.
+- **Returns:** A 2–4 sentence caption that mentions the item, its price, and its platform once each and describes the outfit's vibe.
+- **When it has nothing:** If `outfit` is empty or contains only whitespace, returns `"Couldn't write a fit card — no outfit suggestion was provided."` without calling the model.
 
 ---
 
@@ -93,13 +93,23 @@
      The grader checks your code against what you claim here, so the file and
      function have to be real. -->
 
-**Branch rule:**
+**Branch rule:** If `search_listings` returns an empty list, put a message in
+the session and stop. Otherwise, take the first result and go to
+`suggest_outfit`.
 
 **Where it lives:** `agent.py::run_agent`
 
 **How the query is parsed:** <!-- regex, string splitting, or asking the model — say which -->
+`agent.py::parse_query` uses regular expressions to extract `size` and `max_price`. The remaining non-filler words are used as the description.
 
 **What moves through the session:** <!-- which fields, in what order -->
+The user's query and wardrobe are stored when the session is created. After parsing, `description`, `size`, and
+`max_price` are stored in `session["parsed"]`. The results from
+`search_listings` go into `session["search_results"]`, the first result becomes
+`session["selected_item"]`, the result from `suggest_outfit` goes into
+`session["outfit_suggestion"]`, and the result from `create_fit_card` goes into
+`session["fit_card"]`. If the search returns no results, an explanation is
+stored in `session["error"]` and the run stops.
 
 ---
 
