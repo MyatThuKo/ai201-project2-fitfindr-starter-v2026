@@ -41,7 +41,7 @@
 
 <!-- Three or four sentences: what a user asks for, and what they get back. -->
 
-
+FitFindr helps a user search for a thrifted clothing item using a description, optional size, and maximum price. The agent searches the available listings, selects the best match, and uses the user's wardrobe to suggest one or two outfits around that item. It then creates a short social-style fit card caption describing the thrift find and how it can be styled. If no listing matches the request, the agent stops early and tells the user what they could change in their search instead of continuing with the remaining tools.
 
 ---
 
@@ -197,15 +197,15 @@ Scored these vintage Levi's 501 jeans on depop for only $38 and they fit like an
 
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- _What I asked for:_ I asked Claude to implement `create_fit_card` from my Tool Inventory contract: a 2–4 sentence caption mentioning the item, price, and platform once each.
+- _What came back:_ A working prompt, but testing with the cache off showed one caption wrote the price as "thirty-eight dollars" instead of `$38`, which would fail Criterion 4.
+- _What I changed:_ I changed the prompt to require the price as digits in the exact `$38` format. The next five test runs all contained the price in that format.
 
 **Moment 2**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- _What I asked for:_ After the price fix, I tested more items to check that the captions read like a real post.
+- _What came back:_ One caption for the Y2K Baby Tee said "I just listed it on depop" as if the poster were selling the item.
+- _What I changed:_ I added a rule to the prompt stating that the poster bought the item and is not selling it. Three more runs on the same item all described it as a purchase.
 
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 

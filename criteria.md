@@ -43,10 +43,10 @@ Given a query that matches no listings, the agent stops before calling
 
 ## 3. The selected item carries through session state
 
-Given a query that returns at least one listing, the `id` in the `session["selected item"]` should match the `id` of the item passed into `suggest_outfit` - in at least 4 of 5 tries.
+Given a query that returns at least one listing, the `id` in the `session["selected_item"]` should match the `id` of the item passed into `suggest_outfit` - in at least 4 of 5 tries.
 
 **Why this target:**
-The agent is supposed to move the item found by `search_listings` through session state instead of asking the user for it again. I chose 4 out of 5 because the tool chain includes the model-generated output later, but the selected item iteself should normally remain consistent.
+The agent is supposed to move the item found by `search_listings` through session state instead of asking the user for it again. I chose 4 out of 5 because the tool chain includes the model-generated output later, but the selected item itself should normally remain consistent.
 
 ---
 
@@ -62,7 +62,7 @@ Given a successful run, the fit card should be 2-4 sentences and mention the sel
 
 ## 5. Search respects the maximum price
 
-Given a query with a maxmium price, every listing returned by `search_listings` should have a price less than or equal to that maximum - in 5 of 5 tries.
+Given a query with a maximum price, every listing returned by `search_listings` should have a price less than or equal to that maximum - in 5 of 5 tries.
 
 **Why this target:**
 
