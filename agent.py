@@ -17,7 +17,7 @@ import re
 
 import config
 import trace
-from tools import search_listings, suggest_outfit, create_fit_card
+from tools import search_listings, suggest_outfit, create_fit_card, compare_prices
 from generate import ModelUnavailable
 
 
@@ -42,6 +42,7 @@ def new_session(query: str, wardrobe: dict) -> dict:
         "parsed": {},                # description / size / max_price you pulled out of it
         "search_results": [],        # everything search_listings returned
         "selected_item": None,       # the one you chose — goes into suggest_outfit
+        "price_comparison": None,    # what compare_prices returned
         "wardrobe": wardrobe,        # the user's wardrobe
         "outfit_suggestion": None,   # what suggest_outfit returned
         "fit_card": None,            # what create_fit_card returned
@@ -193,6 +194,13 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     # 5. Choose the best match (search_listings returns best match first).
     session["selected_item"] = session["search_results"][0]
 
+    # 5b. Stretch: compare the chosen item's price with the other results.
+    iterations += 1
+    trace.check_iterations(iterations)
+    session["price_comparison"] = compare_prices(
+        session["selected_item"], session["search_results"]
+    )
+
     # 6. Suggest an outfit, reading the item back out of the session.
     iterations += 1
     trace.check_iterations(iterations)
@@ -221,6 +229,7 @@ def _show(session: dict) -> None:
 
     item = session["selected_item"] or {}
     print(f"  found:    {item.get('title')} — ${item.get('price')} on {item.get('platform')}")
+    print(f"  price:    {session['price_comparison']['summary']}")
     print(f"  outfit:   {session['outfit_suggestion']}")
     print(f"  fit card: {session['fit_card']}")
 

@@ -332,3 +332,69 @@ _CAPTION_SYSTEM = (
     "You write short, natural social captions about thrifted outfits. "
     "Follow the user's formatting and content requirements exactly."
 )
+
+
+# ── Tool 4 (stretch): compare_prices ──────────────────────────────────────────
+
+def compare_prices(selected_item: dict, search_results: list[dict]) -> dict:
+    """
+    Compare the selected listing's price with the other listings the search
+    returned. This one doesn't call the model.
+
+    Args:
+        selected_item:  the listing dict the agent chose.
+        search_results: every listing dict search_listings returned. The
+                        selected item is left out of the average by its `id`.
+
+    Returns:
+        A dict with:
+            selected_price (float)       the selected item's price
+            average_price  (float|None)  average price of the OTHER results
+            difference     (float|None)  selected_price - average_price
+            position       (str)         "below", "equal", "above", or
+                                         "no comparison"
+            compared_with  (int)         how many other listings were averaged
+            summary        (str)         one readable sentence
+
+        When there are no other results to compare against, average_price and
+        difference are None and position is "no comparison" — it does not
+        raise.
+    """
+    price = round(float(selected_item["price"]), 2)
+    others = [r["price"] for r in search_results if r["id"] != selected_item["id"]]
+
+    if not others:
+        return {
+            "selected_price": price,
+            "average_price": None,
+            "difference": None,
+            "position": "no comparison",
+            "compared_with": 0,
+            "summary": f"${price:.2f} — no other matching listings to compare against.",
+        }
+
+    average = round(sum(others) / len(others), 2)
+    difference = round(price - average, 2)
+    if difference < 0:
+        position = "below"
+    elif difference > 0:
+        position = "above"
+    else:
+        position = "equal"
+
+    if position == "equal":
+        summary = f"${price:.2f} — equal to the ${average:.2f} average of {len(others)} other matches."
+    else:
+        summary = (
+            f"${price:.2f} — ${abs(difference):.2f} {position} the ${average:.2f} "
+            f"average of {len(others)} other matches."
+        )
+
+    return {
+        "selected_price": price,
+        "average_price": average,
+        "difference": difference,
+        "position": position,
+        "compared_with": len(others),
+        "summary": summary,
+    }
