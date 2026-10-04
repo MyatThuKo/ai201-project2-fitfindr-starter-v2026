@@ -303,5 +303,32 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
     Test it from a terminal before you move on:
         python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
     """
-    # TODO: replace this with your implementation
-    return ""
+    if not outfit or not outfit.strip():
+        return "Couldn't write a fit card — no outfit suggestion was provided."
+
+    price = f"${new_item['price']:.0f}" if new_item["price"] == int(new_item["price"]) else f"${new_item['price']:.2f}"
+    prompt = (
+        f"Write a caption for a social post about this thrift find.\n\n"
+        f"The item:\n{_describe_item(new_item)}\n"
+        f"  Price: {price}\n"
+        f"  Platform: {new_item['platform']}\n\n"
+        f"How they're styling it:\n{outfit.strip()}\n\n"
+        "Rules:\n"
+        "- 2 to 4 sentences, written in first person like a real post, not a product listing. "
+        "The poster BOUGHT this item on the platform; they are not selling it.\n"
+        f"- Mention the item, the price, and the platform exactly once each. "
+        f"Write the price as digits, exactly \"{price}\" — never spelled out in words.\n"
+        "- Pick ONE outfit from the styling notes and be specific about its vibe.\n"
+        "- No hashtags, no quotation marks around the caption, no preamble."
+    )
+
+    response = generate(prompt, system=_CAPTION_SYSTEM).strip()
+    if not response:
+        return f"Thrifted the {new_item['title']} for {price} on {new_item['platform']} — styling post coming soon."
+    return response
+
+
+_CAPTION_SYSTEM = (
+    "You write short, natural social captions about thrifted outfits. "
+    "Follow the user's formatting and content requirements exactly."
+)
