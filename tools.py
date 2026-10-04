@@ -20,6 +20,7 @@ That last line is what your loop branches on. "Returns a list" earns nothing —
 the description has to say what is *in* the list.
 """
 
+import re
 import config  # noqa: F401 — you'll use this in search_listings
 from generate import generate
 from utils.data_loader import load_listings
@@ -78,8 +79,96 @@ def search_listings(
     Test it from a terminal before you move on:
         python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
     """
-    # TODO: replace this with your implementation
-    return []
+    query_words = _keywords(description)
+    if not query_words:
+        return []
+
+    scored = []
+    for listing in load_listings():
+        if max_price is not None and listing["price"] > max_price:
+            continue
+        if size and not _size_matches(size, listing["size"]):
+            continue
+
+        score = _score(query_words, listing)
+        if score > 0:
+            scored.append((score, listing))
+
+    # sorted() is stable, so ties keep their order from the data file.
+    scored.sort(key=lambda pair: pair[0], reverse=True)
+    return [listing for _, listing in scored[: config.SEARCH_RESULT_LIMIT]]
+
+
+# Words that carry no meaning about the item, so they shouldn't earn points.
+_STOPWORDS = {"a", "an", "and", "the", "for", "with", "in", "of", "to", "or", "on"}
+
+
+def _normalize_word(word: str) -> str:
+    """Lowercase and strip a plural 's' so "tees" matches "tee"."""
+    word = word.lower()
+    if len(word) > 3 and word.endswith("s") and not word.endswith("ss"):
+        word = word[:-1]
+    return word
+
+
+def _keywords(text: str) -> set[str]:
+    """Split text into a set of normalized keywords, dropping stopwords."""
+    words = re.findall(r"[a-z0-9]+", text.lower())
+    return {_normalize_word(w) for w in words if len(w) > 1 and w not in _STOPWORDS}
+
+
+def _score(query_words: set[str], listing: dict) -> int:
+    """
+    Keyword overlap between the query and a listing.
+
+    A word found in the title, category, or style tags is worth 2 — those
+    fields say what the item *is*. A word found only in the description,
+    colors, or brand is worth 1.
+    """
+    strong = _keywords(" ".join([listing["title"], listing["category"], *listing["style_tags"]]))
+    weak = _keywords(" ".join([listing["description"], *listing["colors"], listing["brand"] or ""]))
+
+    score = 0
+    for word in query_words:
+        if word in strong:
+            score += 2
+        elif word in weak:
+            score += 1
+    return score
+
+
+def _size_tokens(size: str) -> set[str]:
+    """
+    Break a size string into whole size tokens.
+
+        "S/M"            → {"S", "M"}
+        "XL (oversized)" → {"XL"}
+        "W30 L30"        → {"W30", "L30"}
+        "US 8.5"         → {"US8.5"}
+        "8.5"            → {"US8.5"}   (a bare number is a shoe size)
+    """
+    size = re.sub(r"\(.*?\)", " ", size.upper())        # drop "(oversized)" notes
+    size = re.sub(r"\bUS\s+", "US", size)                # "US 8.5" → "US8.5"
+    tokens = set()
+    for token in re.split(r"[\s/]+", size):
+        if not token:
+            continue
+        if re.fullmatch(r"\d+(\.\d+)?", token):
+            token = "US" + token
+        tokens.add(token)
+    return tokens
+
+
+def _size_matches(requested: str, listing_size: str) -> bool:
+    """
+    True when the requested size matches the listing's size as a whole token.
+
+    "M" matches "M", "S/M", and "M/L" but not "XL" or "US 9". "L" does not
+    match "W30 L30". A "One Size" listing matches any requested size.
+    """
+    if listing_size.strip().upper().startswith("ONE SIZE"):
+        return True
+    return bool(_size_tokens(requested) & _size_tokens(listing_size))
 
 
 # ── Tool 2: suggest_outfit ────────────────────────────────────────────────────
