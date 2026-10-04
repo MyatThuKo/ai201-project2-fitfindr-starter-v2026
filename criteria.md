@@ -25,9 +25,8 @@ Given a query that matches at least one listing, the agent completes all three
 tool calls and returns a fit card — in at least 4 of 5 tries.
 
 **Why this target:**
-<!-- Why 4 of 5 and not 5 of 5? Something about your search, probably —
-     "my search is a plain keyword match and some phrasings will miss" is a
-     real answer. -->
+
+4 of 5 because `search_listings` uses keyword matching rather than a semantic model. A valid request could be phrased differently from the words in the listing data and miss the search even though a relevant item exists. If a match is found, I still expect the rest of the tool chain to complete normally.
 
 ---
 
@@ -37,66 +36,37 @@ Given a query that matches no listings, the agent stops before calling
 `suggest_outfit` and returns a message naming what to change — 5 of 5 tries.
 
 **Why this target:**
-<!-- Why is 5 of 5 reasonable here when criterion 1 isn't? What's different
-     about this path? -->
+
+5 of 5 because this branch is deterministic. `run_agent` should always stop before calling `suggest_outfit` and store a useful message in `session["error"]` when `search_listings` returns an empty list. Unlike the successful path, this decision does not depend on model-generated output, so I expect it to work every time.
 
 ---
 
-## 3. Something about state
+## 3. The selected item carries through session state
 
-<!-- YOU WRITE THIS ONE.
-
-     How would you know that the item your search found is the same item the
-     next tool received? Name something countable or observable.
-
-     This is the criterion people find hardest, because state failure doesn't
-     look like state failure — it looks like a tool problem. Something that
-     compares session["selected_item"] against what actually reached
-     suggest_outfit is the shape you're after. -->
-
-
+Given a query that returns at least one listing, the `id` in the `session["selected item"]` should match the `id` of the item passed into `suggest_outfit` - in at least 4 of 5 tries.
 
 **Why this target:**
-
-
+The agent is supposed to move the item found by `search_listings` through session state instead of asking the user for it again. I chose 4 out of 5 because the tool chain includes the model-generated output later, but the selected item iteself should normally remain consistent.
 
 ---
 
-## 4. Something about the fit card
+## 4. The fit card contains the required item details
 
-<!-- YOU WRITE THIS ONE.
-
-     The fit card calls a model, so the same input can produce different words
-     each time. That's not a bug — it's the nature of the tool. So what would
-     make it acceptable?
-
-     Think about what you'd actually be unhappy to see. A caption that never
-     mentions the price? Two different items producing the same opening
-     sentence? A card longer than a caption anyone would post? Any of those can
-     be turned into a number. -->
-
-
+Given a successful run, the fit card should be 2-4 sentences and mention the selected item's price and platform - in at least 4 of 5 tries.
 
 **Why this target:**
 
-
+`create_fit_card` calls the model, and I do not expect the wording to be the same every run. I chose observable requirements that can still be checked even when the model phrases the different caption.
 
 ---
 
-## 5. Your choice
+## 5. Search respects the maximum price
 
-<!-- YOU WRITE THIS ONE TOO.
-
-     Pick something you actually care about getting right. Speed, the empty
-     wardrobe path, what happens when the model can't be reached, whether the
-     search respects a price ceiling — anything, as long as it names a number
-     or an observable outcome. -->
-
-
+Given a query with a maxmium price, every listing returned by `search_listings` should have a price less than or equal to that maximum - in 5 of 5 tries.
 
 **Why this target:**
 
-
+`max_price` filters the listing's `price` field directly and is inclusive. The project data does not include taxes, shipping, or checkout fees, so the criterion measures the listed price only and before adding those additional costs.
 
 ---
 
