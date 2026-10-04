@@ -13,6 +13,8 @@ Build and test your three tools in `tools.py` first. Then come here.
     python agent.py          runs both example paths below
 """
 
+import re
+
 import config
 import trace
 from tools import search_listings, suggest_outfit, create_fit_card
@@ -48,6 +50,64 @@ def new_session(query: str, wardrobe: dict) -> dict:
 
 
 # ── planning loop ─────────────────────────────────────────────────────────────
+
+# Words that describe the request but never appear in a listing, so they would
+# only add noise to the keyword match in search_listings.
+_FILLER = {"looking", "for", "a", "an", "the", "i", "want", "need", "some", "in", "me", "find"}
+
+
+def parse_query(query: str) -> dict:
+    """
+    Pull a description, a size, and a max_price out of a plain-language query,
+    using regex.
+
+        "vintage graphic tee under $30, size M"
+            → {"description": "vintage graphic tee", "size": "M", "max_price": 30.0}
+
+    size and max_price are None when the query doesn't mention them.
+    """
+    text = query.strip()
+
+    # Price: "under $30", "below 30", "less than $30.50", "max $30", "$30 or less"
+    max_price = None
+    price_match = re.search(
+        r"(?:under|below|less than|max|up to)\s*\$?(\d+(?:\.\d+)?)"
+        r"|\$(\d+(?:\.\d+)?)\s*(?:or less|max)?",
+        text,
+        re.IGNORECASE,
+    )
+    if price_match:
+        max_price = float(price_match.group(1) or price_match.group(2))
+        text = text.replace(price_match.group(0), " ")
+
+    # Size: "size M", "size S/M", "size US 8.5", "size W30", "size 8"
+    size = None
+    size_match = re.search(
+        r"\b(?:in\s+)?size\s+(US\s*\d+(?:\.\d+)?|W\d+(?:\s*L\d+)?|[A-Za-z0-9./]+)",
+        text,
+        re.IGNORECASE,
+    )
+    if size_match:
+        size = size_match.group(1).strip()
+        text = text.replace(size_match.group(0), " ")
+
+    # Whatever is left, minus punctuation and filler words, is the description.
+    words = re.findall(r"[A-Za-z0-9'-]+", text)
+    description = " ".join(w for w in words if w.lower() not in _FILLER)
+
+    return {"description": description, "size": size, "max_price": max_price}
+
+
+def _no_results_message(parsed: dict) -> str:
+    """Tell the user what they could change, based on what they asked for."""
+    tips = []
+    if parsed["max_price"] is not None:
+        tips.append(f"raise your price limit above ${parsed['max_price']:.0f}")
+    if parsed["size"]:
+        tips.append(f"drop the size filter ({parsed['size']})")
+    tips.append("use broader words than \"" + parsed["description"] + "\"")
+    return "No listings matched. Try: " + "; or ".join(tips) + "."
+
 
 def run_agent(query: str, wardrobe: dict) -> dict:
     """
@@ -105,10 +165,49 @@ def run_agent(query: str, wardrobe: dict) -> dict:
       • A handler for ModelUnavailable, so a bad key produces a message rather
         than a stack trace. The import is already at the top of this file.
     """
+    # 1. Start a session.
     session = new_session(query, wardrobe)
+    iterations = 0
 
-    # TODO: delete these two lines and build the loop.
-    session["error"] = "The planning loop isn't built yet — see the TODO in agent.py."
+    # 2–3. Parse the query.
+    iterations += 1
+    trace.check_iterations(iterations)
+    session["parsed"] = parse_query(query)
+    parsed = session["parsed"]
+
+    # 4. Search.
+    iterations += 1
+    trace.check_iterations(iterations)
+    session["search_results"] = search_listings(
+        parsed["description"],
+        size=parsed["size"],
+        max_price=parsed["max_price"],
+    )
+
+    # THE BRANCH: nothing found → explain what to change and stop here.
+    # suggest_outfit and create_fit_card are never called on this path.
+    if not session["search_results"]:
+        session["error"] = _no_results_message(parsed)
+        return session
+
+    # 5. Choose the best match (search_listings returns best match first).
+    session["selected_item"] = session["search_results"][0]
+
+    # 6. Suggest an outfit, reading the item back out of the session.
+    iterations += 1
+    trace.check_iterations(iterations)
+    session["outfit_suggestion"] = suggest_outfit(
+        session["selected_item"], session["wardrobe"]
+    )
+
+    # 7. Write the fit card from what's in the session.
+    iterations += 1
+    trace.check_iterations(iterations)
+    session["fit_card"] = create_fit_card(
+        session["outfit_suggestion"], session["selected_item"]
+    )
+
+    # 8. Done.
     return session
 
 
