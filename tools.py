@@ -201,8 +201,70 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
     Test it from a terminal before you move on:
         python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
     """
-    # TODO: replace this with your implementation
-    return ""
+    items = (wardrobe or {}).get("items") or []
+    item_text = _describe_item(new_item)
+
+    if not items:
+        prompt = (
+            f"Someone is thinking about buying this thrifted item:\n{item_text}\n\n"
+            "They haven't told us what's in their wardrobe. Suggest one or two "
+            "outfits built around this item, using common basics most people own "
+            "(say what kind of piece, e.g. 'straight-leg blue jeans'). For each "
+            "outfit, give it a short name, list the pieces, and say in one "
+            "sentence why it works."
+        )
+    else:
+        wardrobe_text = "\n".join(_describe_wardrobe_item(w) for w in items)
+        prompt = (
+            f"Someone is thinking about buying this thrifted item:\n{item_text}\n\n"
+            f"Here is what they already own:\n{wardrobe_text}\n\n"
+            "Suggest one or two outfits that pair the new item with pieces from "
+            "their wardrobe. Name each wardrobe piece exactly as it is written "
+            "above, and only use pieces from that list. For each outfit, give it "
+            "a short name, list the pieces, and say in one sentence why it works."
+        )
+
+    response = generate(prompt, system=_STYLIST_SYSTEM).strip()
+    if not response:
+        return (
+            f"No outfit suggestion came back for the {new_item['title']}. "
+            "Try pairing it with simple basics in neutral colors."
+        )
+    return response
+
+
+_STYLIST_SYSTEM = (
+    "You are a practical thrift stylist. Keep suggestions short and concrete: "
+    "plain text, no preamble, no more than two outfits."
+)
+
+
+def _describe_item(item: dict) -> str:
+    """One listing as a few readable lines for a prompt. Brand may be None."""
+    lines = [
+        f"- {item['title']} ({item['category']})",
+        f"  Colors: {', '.join(item['colors'])}",
+        f"  Style: {', '.join(item['style_tags'])}",
+        f"  Details: {item['description']}",
+    ]
+    if item.get("brand"):
+        lines.insert(1, f"  Brand: {item['brand']}")
+    return "\n".join(lines)
+
+
+def _describe_wardrobe_item(item: dict) -> str:
+    """One wardrobe piece as a single prompt line. Notes may be None."""
+    line = (
+        f"- {item['name']} "
+        f"({item['category']}; "
+        f"colors: {', '.join(item['colors'])}; "
+        f"style: {', '.join(item['style_tags'])})"
+    )
+
+    if item.get("notes"):
+        line += f" — {item['notes']}"
+
+    return line
 
 
 # ── Tool 3: create_fit_card ───────────────────────────────────────────────────
