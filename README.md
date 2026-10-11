@@ -327,21 +327,138 @@ that produced it:
 **Happy path**
 
 ```
+$ python app.py ask 'vintage graphic tee under $30' --trace
 
+[1] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      →    results found, continuing
+[2] compare_prices
+      in:  dict with keys: selected_item, search_result_count
+      out: $18.00 — $3.33 below the $21.33 average of 9 other matches.
+[3] suggest_outfit
+      in:  dict with keys: new_item, wardrobe_items
+      out: Y2K Street - Y2K Baby Tee — Butterfly Print - Baggy straight-leg jeans, dark wash - Chunky white sneakers - Bl…
+[4] create_fit_card
+      in:  dict with keys: new_item, outfit
+      out: Scored this adorable Y2K butterfly baby tee on depop for just $18 and I am obsessed. I am styling it with wide…
+
+  Found:    Y2K Baby Tee — Butterfly Print — $18.0 on depop
+  Price:    $18.00 — $3.33 below the $21.33 average of 9 other matches.
+
+  Outfit:   Y2K Street
+- Y2K Baby Tee — Butterfly Print
+- Baggy straight-leg jeans, dark wash
+- Chunky white sneakers
+- Black crossbody bag
+This balances the fitted crop of the tee with relaxed denim and chunky streetwear sneakers for a classic 2000s proportion.
+
+Retro Contrast
+- Y2K Baby Tee — Butterfly Print
+- Wide-leg khaki trousers
+- Vintage black denim jacket
+- Black combat boots
+The edgy black outerwear and boots ground the sweet pastel butterfly print for an easy high-low mix.
+
+  Fit card: Scored this adorable Y2K butterfly baby tee on depop for just $18 and I am obsessed. I am styling it with wide-leg khaki trousers, a vintage black denim jacket, and black combat boots for such a cool retro contrast look. The edgy black outerwear and boots really ground the sweet pastel print.
+
+0 model calls this session, 2 served from cache
 ```
 
 **Empty search**
 
 ```
+$ python app.py ask 'designer ballgown size XXS under $5' --trace
+
+[1] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: [] (empty)
+      →    branch: empty search, stopping
+
+  No listings matched. Try: raise your price limit above $5; or drop the size filter (XXS); or use broader words than "designer ballgown".
+
+0 model calls this session
+```
+
+## Failure Mode Checks
+
+**Empty search**
+
+```
+$ python app.py ask 'designer ballgown size XXS under $5'
+[1] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: [] (empty)
+      →    branch: empty search, stopping
+
+  No listings matched. Try: raise your price limit above $5; or drop the size filter (XXS); or use broader words than "designer ballgown".
+
+0 model calls this session
 
 ```
 
-**On the MCP move:** <!-- what changed in your code, and whether anything
-behaved differently afterwards. If the rewire didn't work, say exactly where it
-broke — the error text and the last thing that worked. That earns the point in
-full. -->
+**Empty Wardrobe**
 
+```
+$ python app.py ask 'vintage graphic tee under $30' --empty-wardrobe
+[1] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      →    results found, continuing
+[2] compare_prices
+      in:  dict with keys: selected_item, search_result_count
+      out: $18.00 — $3.33 below the $21.33 average of 9 other matches.
+[3] suggest_outfit
+      in:  dict with keys: new_item, wardrobe_items
+      out: 1. Retro Street - Straight-leg light wash jeans - White platform sneakers - Small black shoulder bag Why it wo…
+[4] create_fit_card
+      in:  dict with keys: new_item, outfit
+      out: Scored this adorable Y2K butterfly baby tee on Depop for just $18 and I am obsessed. I am leaning into the ret…
 
+  Found:    Y2K Baby Tee — Butterfly Print — $18.0 on depop
+  Price:    $18.00 — $3.33 below the $21.33 average of 9 other matches.
+
+  Outfit:   1. Retro Street
+- Straight-leg light wash jeans
+- White platform sneakers
+- Small black shoulder bag
+Why it works: Balances the fitted, girly top with relaxed denim for an effortless everyday look.
+
+2. Y2K Grunge
+- Black pleated mini skirt
+- Knee-high black boots
+- Silver chain necklace
+Why it works: The edgy skirt and boots tone down the sweetness of the butterfly print.
+
+  Fit card: Scored this adorable Y2K butterfly baby tee on Depop for just $18 and I am obsessed. I am leaning into the retro street vibe today by pairing itwith relaxed straight-leg jeans and white platform sneakers. It balances the fitted, girly print with casual denim for the ultimate everyday look.
+
+0 model calls this session, 2 served from cache
+```
+
+**Model Unavailable (API Failed)**
+
+```
+python app.py ask 'vintage graphic tee under $30' --trace
+[1] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      →    results found, continuing
+[2] compare_prices
+      in:  dict with keys: selected_item, search_result_count
+      out: $18.00 — $3.33 below the $21.33 average of 9 other matches.
+[3] suggest_outfit
+      in:  dict with keys: new_item
+      out: ModelUnavailable
+      →    model unavailable, stopping
+
+  The styling model couldn't be reached. Check your API key and network connection. If the problem persists, try again later.
+
+1 model calls this session
+```
+
+**On the MCP move:**
+I moved `search_listings` from a direct Python function call in `agent.py` to an MCP tool registered in `mcp_server.py`.
+`run_agent` now calls it through `mcp_client.call_tool`, while the inputs and returned list of listing dictionaries stayed the same. After the rewire, the happy path and empty-search path behaved the same as before; the trace now shows `search_listings (via MCP)` as the first tool call.
 
 ---
 

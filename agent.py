@@ -170,6 +170,7 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     # 1. Start a session.
     session = new_session(query, wardrobe)
     iterations = 0
+    trace.start_trace()
 
     # 2–3. Parse the query.
     iterations += 1
@@ -185,6 +186,20 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         "size": parsed["size"],
         "max_price": parsed["max_price"],
     })
+    trace.step(
+        "search_listings (via MCP)",
+        inputs={
+            "description": parsed["description"],
+            "size": parsed["size"],
+            "max_price": parsed["max_price"],
+        },
+        returned=session["search_results"],
+        note=(
+            "branch: empty search, stopping"
+            if not session["search_results"]
+            else "results found, continuing"
+        ),
+    )
 
     # THE BRANCH: nothing found → explain what to change and stop here.
     # suggest_outfit and create_fit_card are never called on this path.
@@ -201,24 +216,74 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     session["price_comparison"] = compare_prices(
         session["selected_item"], session["search_results"]
     )
+    trace.step(
+        "compare_prices",
+        inputs={
+            "selected_item": session["selected_item"]["title"],
+            "search_result_count": len(session["search_results"]),
+        },
+        returned=session["price_comparison"]["summary"],
+    )
 
     # 6. Suggest an outfit, reading the item back out of the session.
     iterations += 1
     trace.check_iterations(iterations)
-    session["outfit_suggestion"] = suggest_outfit(
-        session["selected_item"], session["wardrobe"]
-    )
+    try: 
+        session["outfit_suggestion"] = suggest_outfit(
+            session["selected_item"], session["wardrobe"]
+        )
+        trace.step(
+            "suggest_outfit",
+            inputs={
+                "new_item": session["selected_item"]["title"],
+                "wardrobe_items": len(session["wardrobe"].get("items", [])),
+            },
+            returned=session["outfit_suggestion"],
+        )
+    except ModelUnavailable: 
+        session["error"] = (
+            "The styling model couldn't be reached. Check your API key and network connection."
+            " If the problem persists, try again later."
+        )
+        handle_model_failure(session, "suggest_outfit", session["error"])
+        return session
 
     # 7. Write the fit card from what's in the session.
     iterations += 1
     trace.check_iterations(iterations)
-    session["fit_card"] = create_fit_card(
-        session["outfit_suggestion"], session["selected_item"]
-    )
-
+    try:
+        session["fit_card"] = create_fit_card(
+            session["outfit_suggestion"], session["selected_item"]
+        )
+        trace.step(
+            "create_fit_card",
+            inputs={
+                "new_item": session["selected_item"]["title"],
+                "outfit": session["outfit_suggestion"],
+            },
+            returned=session["fit_card"],
+        )
+    except ModelUnavailable:
+        session["error"] = (
+            "The fit card model couldn't be reached. Check your API key and network connection."
+            " If the problem persists, try again later."
+        )
+        handle_model_failure(session, "create_fit_card", session["error"])
+        return session
     # 8. Done.
     return session
 
+def handle_model_failure(session: dict, tool_name: str, message: str) -> None:
+    session["error"] = message
+
+    trace.step(
+        tool_name,
+        inputs={
+            "new_item": session["selected_item"]["title"],
+        },
+        returned="ModelUnavailable",
+        note="model unavailable, stopping",
+    )
 
 # ── running it directly ───────────────────────────────────────────────────────
 
