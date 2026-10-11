@@ -263,18 +263,77 @@ $ python app.py ask 'jeans size W30'
      `python run_eval.py --label before` runs everything and writes the table
      into results/. Paste it here and fill in the verdicts. -->
 
-| Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
-|---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+| Criterion                                      | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict       |
+| ---------------------------------------------- | -----: | ----- | ----- | ----- | ----- | ----- | ------------- |
+| 1. Matching query completes all three tools    | 4 of 5 | PASS  | PASS  | PASS  | PASS  | PASS  | **MET — 5/5** |
+| 2. Impossible query stops before second tool   | 5 of 5 | PASS  | PASS  | PASS  | PASS  | PASS  | **MET — 5/5** |
+| 3. Selected item carries through session state | 4 of 5 | PASS  | PASS  | PASS  | PASS  | PASS  | **MET — 5/5** |
+| 4. Fit card contains required item details     | 4 of 5 | PASS  | PASS  | PASS  | PASS  | PASS  | **MET — 5/5** |
+| 5. Search respects maximum price               | 5 of 5 | PASS  | PASS  | PASS  | PASS  | PASS  | **MET — 5/5** |
 
 **Real output from one try**, pasted as text, naming the file and function
 that produced it:
 
 ```
+Produced by: `run_eval.py::main`
+Agent loop: `agent.py::run_agent`
+
+- Query: `vintage graphic tee under $30`
+- Wardrobe: example
+
+**Try 1**
+
+- stopped early: no
+- selected_item: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+- search_results: 10
+
+Outfit suggestion:
+
+```
+
+Y2K Street
+
+- Y2K Baby Tee — Butterfly Print
+- Baggy straight-leg jeans, dark wash
+- Chunky white sneakers
+- Black crossbody bag
+  It balances the fitted, feminine tee with relaxed denim and streetwear accessories.
+
+Grunge Contrast
+
+- Y2K Baby Tee — Butterfly Print
+- Vintage black denim jacket
+- Wide-leg khaki trousers
+- Black combat boots
+  It anchors the sweet butterfly print with edgy outerwear and chunky footwear.
+
+```
+
+Fit card:
+
+```
+
+I finally scored this adorable Y2K baby tee on Depop for just $18 and I am obsessed with the butterfly print. For a grunge contrast look, I paired it with a vintage black denim jacket, wide-leg khaki trousers, and chunky black combat boots to anchor the sweet graphic. It is the ultimate mix of feminine and edgy for everyday wear.
+
+```
+
+Trace:
+
+```
+
+[1] search_listings (via MCP)
+in: dict with keys: description, size, max_price
+out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+→ results found, continuing
+[2] compare_prices
+in: dict with keys: selected_item, search_result_count
+out: $18.00 — $3.33 below the $21.33 average of 9 other matches.
+[3] suggest_outfit
+in: dict with keys: new_item, wardrobe_items
+out: Y2K Street - Y2K Baby Tee — Butterfly Print - Baggy straight-leg jeans, dark wash - Chunky white sneakers - Bl…
+[4] create_fit_card
+in: dict with keys: new_item, outfit
+out: I finally scored this adorable Y2K baby tee on Depop for just $18 and I am obsessed with the butterfly print. …
 
 ```
 
