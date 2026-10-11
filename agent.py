@@ -17,7 +17,8 @@ import re
 
 import config
 import trace
-from tools import search_listings, suggest_outfit, create_fit_card, compare_prices
+from tools import suggest_outfit, create_fit_card, compare_prices
+from mcp_client import call_tool
 from generate import ModelUnavailable
 
 
@@ -179,11 +180,11 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     # 4. Search.
     iterations += 1
     trace.check_iterations(iterations)
-    session["search_results"] = search_listings(
-        parsed["description"],
-        size=parsed["size"],
-        max_price=parsed["max_price"],
-    )
+    session["search_results"] = call_tool("search_listings", {
+        "description": parsed["description"],
+        "size": parsed["size"],
+        "max_price": parsed["max_price"],
+    })
 
     # THE BRANCH: nothing found → explain what to change and stop here.
     # suggest_outfit and create_fit_card are never called on this path.
