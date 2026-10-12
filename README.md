@@ -626,6 +626,7 @@ The tool contract stayed the same: `selected_item` and `search_results` go in, a
 Example trace:
 
 ```
+python app.py ask 'vintage graphic tee under $30' --trace
 [1] search_listings (via MCP)
       in:  dict with keys: description, size, max_price
       out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
@@ -656,7 +657,72 @@ Edgy Contrast
 - Black combat boots
 - Vintage black denim jacket
 The tough combat boots and denim jacket ground the sweet butterfly graphic, creating a cool mix of styles.
-...
+
+  Fit card: Scored this amazing Y2K Baby Tee — Butterfly Print on depop for only $18 and I'm obsessed with the early 2000s streetwear look. I styled it withbaggy dark wash straight-leg jeans, chunky white sneakers, and a black crossbody bag to balance the fitted, feminine graphic. It is such an easy piece to throw on for effortless daily fits.
+```
+
+### Stretch - Retry with Looser Constraints
+
+If the first search returns no results and the user provided a size, the agent retries once with the size filter removed.
+The trace records both the original failed search and the retry, including which size constraint was dropped.
+
+Example:
+```
+python app.py ask 'crewneck size L' --trace
+[1] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: [] (empty)
+      →    no results; retrying once without size filter (dropped size=L)
+[2] search_listings retry (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 2 items: Oversized Crewneck Sweatshirt — Vintage Navy, Oversized College Crewneck — Faded Red
+      →    retry succeeded after dropping size=L
+[3] compare_prices (via MCP)
+      in:  dict with keys: selected_item, search_result_count
+      out: $20.00 — $1.00 below the $21.00 average of 1 other matches.
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe_items
+      out: Outfit 1: Casual Streetwear - Oversized Crewneck Sweatshirt — Vintage Navy - Baggy straight-leg jeans, dark wa…
+[5] create_fit_card
+      in:  dict with keys: new_item, outfit
+      out: Scored this Oversized Crewneck Sweatshirt — Vintage Navy on thredUp for only $20, and the genuine fade is just…
+
+  Found:    Oversized Crewneck Sweatshirt — Vintage Navy — $20.0 on thredUp
+  Price:    $20.00 — $1.00 below the $21.00 average of 1 other matches.
+
+  Outfit:   Outfit 1: Casual Streetwear
+- Oversized Crewneck Sweatshirt — Vintage Navy
+- Baggy straight-leg jeans, dark wash
+- Chunky white sneakers
+- Black crossbody bag
+Why it works: A monochromatic blue palette anchors the relaxed streetwear silhouette, balanced by crisp white sneakers.
+
+Outfit 2: High-Contrast Contrast
+- Oversized Crewneck Sweatshirt — Vintage Navy
+- Wide-leg khaki trousers
+- Brown leather belt
+- Black combat boots
+Why it works: Navy and khaki create a classic earth-toned contrast, grounded by chunky black boots and a matching belt.
+
+  Fit card: Scored this Oversized Crewneck Sweatshirt — Vintage Navy on thredUp for only $20, and the genuine fade is just unmatched. I styled it with wide-leg khaki trousers, a brown leather belt, and black combat boots for a high-contrast look with an earthy, effortless vibe. It is the ultimate basic that I know is going to be on heavy rotation all season.
+
+2 model calls this session, 801 prompt + 204 output tokens
+```
+
+Empty/No Listings Example:
+```
+python app.py ask 'designer ballgown size XXS under $5' --trace
+[1] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: [] (empty)
+      →    no results; retrying once without size filter (dropped size=XXS)
+[2] search_listings retry (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: [] (empty)
+      →    retry still empty after dropping size=XXS
+
+  No listings matched. Try: raise your price limit above $5; or drop the size filter (XXS); or use broader words than "designer ballgown".
+```
 
 <!-- ═════════════════════════════════════════════════════════════════════
 

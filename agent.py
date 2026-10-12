@@ -181,25 +181,60 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     # 4. Search.
     iterations += 1
     trace.check_iterations(iterations)
-    session["search_results"] = call_tool("search_listings", {
+
+    search_inputs = {
         "description": parsed["description"],
         "size": parsed["size"],
         "max_price": parsed["max_price"],
-    })
+    }
+
+    session["search_results"] = call_tool(
+        "search_listings",
+        search_inputs,
+    )
+
     trace.step(
         "search_listings (via MCP)",
-        inputs={
-            "description": parsed["description"],
-            "size": parsed["size"],
-            "max_price": parsed["max_price"],
-        },
+        inputs=search_inputs,
         returned=session["search_results"],
         note=(
-            "branch: empty search, stopping"
-            if not session["search_results"]
-            else "results found, continuing"
+            f"no results; retrying once without size filter "
+            f"(dropped size={parsed['size']})"
+            if not session["search_results"] and parsed["size"] is not None
+            else (
+                "branch: empty search, stopping"
+                if not session["search_results"]
+                else "results found, continuing"
+            )
         ),
     )
+
+    # Stretch: retry once without the size filter.
+    if not session["search_results"] and parsed["size"] is not None:
+        iterations += 1
+        trace.check_iterations(iterations)
+
+        retry_inputs = {
+            "description": parsed["description"],
+            "size": None,
+            "max_price": parsed["max_price"],
+        }
+
+        session["search_results"] = call_tool(
+            "search_listings",
+            retry_inputs,
+        )
+
+        trace.step(
+            "search_listings retry (via MCP)",
+            inputs=retry_inputs,
+            returned=session["search_results"],
+            note=(
+                f"retry succeeded after dropping size={parsed['size']}"
+                if session["search_results"]
+                else f"retry still empty after dropping size={parsed['size']}"
+            ),
+        )
 
     # THE BRANCH: nothing found → explain what to change and stop here.
     # suggest_outfit and create_fit_card are never called on this path.
