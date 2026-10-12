@@ -207,6 +207,12 @@ Scored these vintage Levi's 501 jeans on depop for only $38 and they fit like an
 - _What came back:_ One caption for the Y2K Baby Tee said "I just listed it on depop" as if the poster were selling the item.
 - _What I changed:_ I added a rule to the prompt stating that the poster bought the item and is not selling it. Three more runs on the same item all described it as a purchase.
 
+**Moment 3**
+
+- _What I asked for:_ I asked AI to help me review the Unit 4 test results and compare the before and after runs.
+- _What came back:_ It pointed out that all five acceptance criteria stayed at 5 of 5, so there was no numerical score improvement, but the exact-title behavior in `create_fit_card` became more consistent.
+- _What I changed:_ I kept the acceptance criteria and scores unchanged, documented the prompt change as a qualitative improvement, and wrote that the existing criteria were already at the ceiling instead of claiming a score increase.
+
 ---
 
 ## Stretch Feature — Fourth Tool
@@ -389,57 +395,63 @@ That state transfer is deterministic and does not depend on the model, so a stri
 **Happy path**
 
 ```
+
 $ python app.py ask 'vintage graphic tee under $30' --trace
 
 [1] search_listings (via MCP)
-      in:  dict with keys: description, size, max_price
-      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
-      →    results found, continuing
+in: dict with keys: description, size, max_price
+out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+→ results found, continuing
 [2] compare_prices
-      in:  dict with keys: selected_item, search_result_count
-      out: $18.00 — $3.33 below the $21.33 average of 9 other matches.
+in: dict with keys: selected_item, search_result_count
+out: $18.00 — $3.33 below the $21.33 average of 9 other matches.
 [3] suggest_outfit
-      in:  dict with keys: new_item, wardrobe_items
-      out: Y2K Street - Y2K Baby Tee — Butterfly Print - Baggy straight-leg jeans, dark wash - Chunky white sneakers - Bl…
+in: dict with keys: new_item, wardrobe_items
+out: Y2K Street - Y2K Baby Tee — Butterfly Print - Baggy straight-leg jeans, dark wash - Chunky white sneakers - Bl…
 [4] create_fit_card
-      in:  dict with keys: new_item, outfit
-      out: Scored this adorable Y2K butterfly baby tee on depop for just $18 and I am obsessed. I am styling it with wide…
+in: dict with keys: new_item, outfit
+out: Scored this adorable Y2K butterfly baby tee on depop for just $18 and I am obsessed. I am styling it with wide…
 
-  Found:    Y2K Baby Tee — Butterfly Print — $18.0 on depop
-  Price:    $18.00 — $3.33 below the $21.33 average of 9 other matches.
+Found: Y2K Baby Tee — Butterfly Print — $18.0 on depop
+Price: $18.00 — $3.33 below the $21.33 average of 9 other matches.
 
-  Outfit:   Y2K Street
+Outfit: Y2K Street
+
 - Y2K Baby Tee — Butterfly Print
 - Baggy straight-leg jeans, dark wash
 - Chunky white sneakers
 - Black crossbody bag
-This balances the fitted crop of the tee with relaxed denim and chunky streetwear sneakers for a classic 2000s proportion.
+  This balances the fitted crop of the tee with relaxed denim and chunky streetwear sneakers for a classic 2000s proportion.
 
 Retro Contrast
+
 - Y2K Baby Tee — Butterfly Print
 - Wide-leg khaki trousers
 - Vintage black denim jacket
 - Black combat boots
-The edgy black outerwear and boots ground the sweet pastel butterfly print for an easy high-low mix.
+  The edgy black outerwear and boots ground the sweet pastel butterfly print for an easy high-low mix.
 
   Fit card: Scored this adorable Y2K butterfly baby tee on depop for just $18 and I am obsessed. I am styling it with wide-leg khaki trousers, a vintage black denim jacket, and black combat boots for such a cool retro contrast look. The edgy black outerwear and boots really ground the sweet pastel print.
 
 0 model calls this session, 2 served from cache
+
 ```
 
 **Empty search**
 
 ```
+
 $ python app.py ask 'designer ballgown size XXS under $5' --trace
 
 [1] search_listings (via MCP)
-      in:  dict with keys: description, size, max_price
-      out: [] (empty)
-      →    branch: empty search, stopping
+in: dict with keys: description, size, max_price
+out: [] (empty)
+→ branch: empty search, stopping
 
-  No listings matched. Try: raise your price limit above $5; or drop the size filter (XXS); or use broader words than "designer ballgown".
+No listings matched. Try: raise your price limit above $5; or drop the size filter (XXS); or use broader words than "designer ballgown".
 
 0 model calls this session
+
 ```
 
 ## Failure Mode Checks
@@ -447,13 +459,14 @@ $ python app.py ask 'designer ballgown size XXS under $5' --trace
 **Empty search**
 
 ```
+
 $ python app.py ask 'designer ballgown size XXS under $5'
 [1] search_listings (via MCP)
-      in:  dict with keys: description, size, max_price
-      out: [] (empty)
-      →    branch: empty search, stopping
+in: dict with keys: description, size, max_price
+out: [] (empty)
+→ branch: empty search, stopping
 
-  No listings matched. Try: raise your price limit above $5; or drop the size filter (XXS); or use broader words than "designer ballgown".
+No listings matched. Try: raise your price limit above $5; or drop the size filter (XXS); or use broader words than "designer ballgown".
 
 0 model calls this session
 
@@ -462,60 +475,66 @@ $ python app.py ask 'designer ballgown size XXS under $5'
 **Empty Wardrobe**
 
 ```
+
 $ python app.py ask 'vintage graphic tee under $30' --empty-wardrobe
 [1] search_listings (via MCP)
-      in:  dict with keys: description, size, max_price
-      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
-      →    results found, continuing
+in: dict with keys: description, size, max_price
+out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+→ results found, continuing
 [2] compare_prices
-      in:  dict with keys: selected_item, search_result_count
-      out: $18.00 — $3.33 below the $21.33 average of 9 other matches.
+in: dict with keys: selected_item, search_result_count
+out: $18.00 — $3.33 below the $21.33 average of 9 other matches.
 [3] suggest_outfit
-      in:  dict with keys: new_item, wardrobe_items
-      out: 1. Retro Street - Straight-leg light wash jeans - White platform sneakers - Small black shoulder bag Why it wo…
+in: dict with keys: new_item, wardrobe_items
+out: 1. Retro Street - Straight-leg light wash jeans - White platform sneakers - Small black shoulder bag Why it wo…
 [4] create_fit_card
-      in:  dict with keys: new_item, outfit
-      out: Scored this adorable Y2K butterfly baby tee on Depop for just $18 and I am obsessed. I am leaning into the ret…
+in: dict with keys: new_item, outfit
+out: Scored this adorable Y2K butterfly baby tee on Depop for just $18 and I am obsessed. I am leaning into the ret…
 
-  Found:    Y2K Baby Tee — Butterfly Print — $18.0 on depop
-  Price:    $18.00 — $3.33 below the $21.33 average of 9 other matches.
+Found: Y2K Baby Tee — Butterfly Print — $18.0 on depop
+Price: $18.00 — $3.33 below the $21.33 average of 9 other matches.
 
-  Outfit:   1. Retro Street
+Outfit: 1. Retro Street
+
 - Straight-leg light wash jeans
 - White platform sneakers
 - Small black shoulder bag
-Why it works: Balances the fitted, girly top with relaxed denim for an effortless everyday look.
+  Why it works: Balances the fitted, girly top with relaxed denim for an effortless everyday look.
 
 2. Y2K Grunge
+
 - Black pleated mini skirt
 - Knee-high black boots
 - Silver chain necklace
-Why it works: The edgy skirt and boots tone down the sweetness of the butterfly print.
+  Why it works: The edgy skirt and boots tone down the sweetness of the butterfly print.
 
   Fit card: Scored this adorable Y2K butterfly baby tee on Depop for just $18 and I am obsessed. I am leaning into the retro street vibe today by pairing itwith relaxed straight-leg jeans and white platform sneakers. It balances the fitted, girly print with casual denim for the ultimate everyday look.
 
 0 model calls this session, 2 served from cache
+
 ```
 
 **Model Unavailable (API Failed)**
 
 ```
+
 python app.py ask 'vintage graphic tee under $30' --trace
 [1] search_listings (via MCP)
-      in:  dict with keys: description, size, max_price
-      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
-      →    results found, continuing
+in: dict with keys: description, size, max_price
+out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+→ results found, continuing
 [2] compare_prices
-      in:  dict with keys: selected_item, search_result_count
-      out: $18.00 — $3.33 below the $21.33 average of 9 other matches.
+in: dict with keys: selected_item, search_result_count
+out: $18.00 — $3.33 below the $21.33 average of 9 other matches.
 [3] suggest_outfit
-      in:  dict with keys: new_item
-      out: ModelUnavailable
-      →    model unavailable, stopping
+in: dict with keys: new_item
+out: ModelUnavailable
+→ model unavailable, stopping
 
-  The styling model couldn't be reached. Check your API key and network connection. If the problem persists, try again later.
+The styling model couldn't be reached. Check your API key and network connection. If the problem persists, try again later.
 
 1 model calls this session
+
 ```
 
 **On the MCP move:**
@@ -569,7 +588,7 @@ The before run was already at the maximum score, so the existing criteria could 
 
 However, the specific behavior I changed did improve.
 Before the prompt change, `create_fit_card` often referred to the selected item with a shortened or generic name, such as `Vintage Levi's 501 jeans`
-After requiring the exact listing title, all five Criterion 4 runs included `Vintage Levi's 501 Jeans - Medium Wash` in the fit card.
+After requiring the exact listing title, all five Criterion 4 runs included `Vintage Levi's 501 Jeans — Medium Wash` in the fit card.
 
 So the change improved how clearly the generated caption is grounded in the selected listing, even though Criterion 4 remained MET at 5/5 before and after.
 
@@ -580,6 +599,11 @@ So the change improved how clearly the generated caption is grounded in the sele
 <!-- For each criterion still missed: what you'd do, and why you stopped where
      you did. "I ran out of time" is fine if it's true. Pretending nothing is
      left is not. -->
+None of the five acceptance criteria are still missed after the improvement run.
+All five criteria remained MET at 5 of 5.
+
+The main limitation I would continue working on is outside the current acceptance criteria: the fit-card prompt can still produce stylistic variation even when it follows the required structure.
+I stopped here because the assignment asks for one measured improvement, and the current criteria are already satisfied.
 
 
 
@@ -587,31 +611,31 @@ So the change improved how clearly the generated caption is grounded in the sele
 
      SUBMISSION CHECKLIST — unit 3
 
-       [ ] criteria.md has five numbered criteria, each with a target
-       [ ] Each criterion has a reason underneath it
-       [ ] All five unit 3 sections above have real content
-       [ ] Tool Inventory: all three tools, inputs WITH TYPES, a specific
+       [x] criteria.md has five numbered criteria, each with a target
+       [x] Each criterion has a reason underneath it
+       [x] All five unit 3 sections above have real content
+       [x] Tool Inventory: all three tools, inputs WITH TYPES, a specific
            return value, and the empty case
-       [ ] Planning Loop names the branch rule and agent.py::run_agent
-       [ ] Sample Run: one full query plus the three per-tool tests, as text
-       [ ] At least four new commits
-       [ ] Repository URL submitted — WRITE IT DOWN, you submit the same one
+       [x] Planning Loop names the branch rule and agent.py::run_agent
+       [x] Sample Run: one full query plus the three per-tool tests, as text
+       [x] At least four new commits
+       [x] Repository URL submitted — WRITE IT DOWN, you submit the same one
            next unit
 
      SUBMISSION CHECKLIST — unit 4
 
-       [ ] mcp_server.py exists with one tool registered
+       [x] mcp_server.py exists with one tool registered
            (or a written record of exactly where the rewire broke)
-       [ ] Run Log — Before, five criteria, five tries each
-       [ ] Real output pasted underneath, naming file and function
-       [ ] A verdict on every criterion
-       [ ] A diagnosis for every miss, naming a place AND a mechanism
-       [ ] Loop Trace, with the MCP call visible in it
-       [ ] All three failure modes triggered and handled
-       [ ] One improvement, with Run Log — After in the same format
-       [ ] What's Still Broken
-       [ ] At least four new commits
-       [ ] The SAME repository URL as last unit
+       [x] Run Log — Before, five criteria, five tries each
+       [x] Real output pasted underneath, naming file and function
+       [x] A verdict on every criterion
+       [x] A diagnosis for every miss, naming a place AND a mechanism
+       [x] Loop Trace, with the MCP call visible in it
+       [x] All three failure modes triggered and handled
+       [x] One improvement, with Run Log — After in the same format
+       [x] What's Still Broken
+       [x] At least four new commits
+       [x] The SAME repository URL as last unit
 
      Do not delete and recreate this repository. Your commit history is what
      shows your criteria existed before your results did.
@@ -620,3 +644,4 @@ So the change improved how clearly the generated caption is grounded in the sele
 ---
 
 📖 **How to run this project: [RUNNING.md](RUNNING.md)**
+```
