@@ -605,7 +605,15 @@ All five criteria remained MET at 5 of 5.
 The main limitation I would continue working on is outside the current acceptance criteria: the fit-card prompt can still produce stylistic variation even when it follows the required structure.
 I stopped here because the assignment asks for one measured improvement, and the current criteria are already satisfied.
 
+## Unit 4 Stretch Features
 
+I plan to add the following stretch features before implementing them:
+
+1. **Second MCP tool:** Move `compare_prices` behind MCP so both `search_listings` and `compare_prices` are called through the MCP client.
+
+2. **Retry with looser constraints:** If a search with a size filter returns no results, retry once without the size filter and tell the user which constraint was removed.
+
+3. **Second measured improvement:** I will make one additional change based on the evaluation results and measure it with a third full evaluation run.
 
 <!-- ═════════════════════════════════════════════════════════════════════
 
