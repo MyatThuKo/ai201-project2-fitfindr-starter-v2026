@@ -532,25 +532,46 @@ I moved `search_listings` from a direct Python function call in `agent.py` to an
      `python run_eval.py --label after` -->
 
 **What I changed:**
+I tightened the `create_fit_card` prompt so that it now requires the selected listing's exact title to appear once in the caption. Previously, the prompt only required the caption to mention the item, which allowed the model to refer to it more generally.
 
 **Which failure it was meant to fix:**
+None of my five acceptance criteria missed in the before run.
+This change was meant to make the fit card more clearly grounded in the exact listing selected by the agent.
+Criterion 4 already passed 5 of 5, so its score may remain the same even if the captions become more specific.
+
+### Before vs. After
+
+| Criterion | Before | After | Change |
+|---|---:|---:|---|
+| 1. Matching query completes all three tools | 5/5 | 5/5 | No score change |
+| 2. Impossible query stops before second tool | 5/5 | 5/5 | No score change |
+| 3. Selected item carries through session state | 5/5 | 5/5 | No score change |
+| 4. Fit card contains required item details | 5/5 | 5/5 | No score change |
+| 5. Search respects maximum price | 5/5 | 5/5 | No score change |
 
 ### Run Log — After
 
-| Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
-|---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+| Criterion                                      | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict       |
+| ---------------------------------------------- | -----: | ----- | ----- | ----- | ----- | ----- | ------------- |
+| 1. Matching query completes all three tools    | 4 of 5 | PASS  | PASS  | PASS  | PASS  | PASS  | **MET — 5/5** |
+| 2. Impossible query stops before second tool   | 5 of 5 | PASS  | PASS  | PASS  | PASS  | PASS  | **MET — 5/5** |
+| 3. Selected item carries through session state | 4 of 5 | PASS  | PASS  | PASS  | PASS  | PASS  | **MET — 5/5** |
+| 4. Fit card contains required item details     | 4 of 5 | PASS  | PASS  | PASS  | PASS  | PASS  | **MET — 5/5** |
+| 5. Search respects maximum price               | 5 of 5 | PASS  | PASS  | PASS  | PASS  | PASS  | **MET — 5/5** |
 
 **Did it help, and how do I know:**
 
 <!-- If it made things worse, say that. Honestly reported, that earns full
      credit and is more interesting than one that worked. -->
+The acceptance criterion scores stayed the same.
+All five criteria were 5 of 5 before and 5 of 5 after.
+The before run was already at the maximum score, so the existing criteria could not show a numerical improvement.
 
+However, the specific behavior I changed did improve.
+Before the prompt change, `create_fit_card` often referred to the selected item with a shortened or generic name, such as `Vintage Levi's 501 jeans`
+After requiring the exact listing title, all five Criterion 4 runs included `Vintage Levi's 501 Jeans - Medium Wash` in the fit card.
 
+So the change improved how clearly the generated caption is grounded in the selected listing, even though Criterion 4 remained MET at 5/5 before and after.
 
 ---
 
