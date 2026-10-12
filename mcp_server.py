@@ -60,6 +60,7 @@ works with a direct call, and **a documented failure earns the point in full.**
 from mcp.server.fastmcp import FastMCP
 
 from tools import search_listings as _search_listings_impl  # noqa: F401 — you'll use this below
+from tools import compare_prices as _compare_prices_impl
 
 # log_level="WARNING" keeps the server from printing an INFO line for every
 # request. Without it your terminal fills with "Processing request of type
@@ -78,6 +79,19 @@ def search_listings(
     Returns matching listing dictionaries ranked best match first. If no listings match, returns an empty list.
     """
     return _search_listings_impl(description, size, max_price)
+
+@mcp.tool()
+def compare_prices(
+    selected_item: dict,
+    search_results: list[dict],
+) -> dict:
+    """
+    Compare the selected listing's price with the prices of the other search results.
+    Returns a dictionary containing:
+    selected_price, average_price, difference, position, compared_with, and summary.
+    If there are no other listings to compare against, average_price and difference are None and position is "no comparison".
+    """
+    return _compare_prices_impl(selected_item, search_results)
 #
 # ──────────────────────────────────────────────────────────────────────────────
 #

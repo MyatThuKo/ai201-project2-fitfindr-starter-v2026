@@ -535,7 +535,7 @@ The styling model couldn't be reached. Check your API key and network connection
 
 1 model calls this session
 
-```
+````
 
 **On the MCP move:**
 I moved `search_listings` from a direct Python function call in `agent.py` to an MCP tool registered in `mcp_server.py`.
@@ -615,6 +615,49 @@ I plan to add the following stretch features before implementing them:
 
 3. **Second measured improvement:** I will make one additional change based on the evaluation results and measure it with a third full evaluation run.
 
+### Stretch — Second MCP Tool
+
+I moved `compare_prices` behind MCP alongside `search_listings`.
+
+The agent now calls both tools through `mcp_client.call_tool`.
+
+The tool contract stayed the same: `selected_item` and `search_results` go in, and the same comparison dictionary comes back.
+
+Example trace:
+
+```
+[1] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      →    results found, continuing
+[2] compare_prices (via MCP)
+      in:  dict with keys: selected_item, search_result_count
+      out: $18.00 — $3.33 below the $21.33 average of 9 other matches.
+[3] suggest_outfit
+      in:  dict with keys: new_item, wardrobe_items
+      out: Y2K Street - Y2K Baby Tee — Butterfly Print - Baggy straight-leg jeans, dark wash - Chunky white sneakers - Bl…
+[4] create_fit_card
+      in:  dict with keys: new_item, outfit
+      out: Scored this amazing Y2K Baby Tee — Butterfly Print on depop for only $18 and I'm obsessed with the early 2000s…
+
+  Found:    Y2K Baby Tee — Butterfly Print — $18.0 on depop
+  Price:    $18.00 — $3.33 below the $21.33 average of 9 other matches.
+
+  Outfit:   Y2K Street
+- Y2K Baby Tee — Butterfly Print
+- Baggy straight-leg jeans, dark wash
+- Chunky white sneakers
+- Black crossbody bag
+It balances the fitted, feminine tee with relaxed denim and chunky sneakers for an authentic early 2000s streetwear look.
+
+Edgy Contrast
+- Y2K Baby Tee — Butterfly Print
+- Wide-leg khaki trousers
+- Black combat boots
+- Vintage black denim jacket
+The tough combat boots and denim jacket ground the sweet butterfly graphic, creating a cool mix of styles.
+...
+
 <!-- ═════════════════════════════════════════════════════════════════════
 
      SUBMISSION CHECKLIST — unit 3
@@ -652,4 +695,4 @@ I plan to add the following stretch features before implementing them:
 ---
 
 📖 **How to run this project: [RUNNING.md](RUNNING.md)**
-```
+````

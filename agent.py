@@ -213,11 +213,12 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     # 5b. Stretch: compare the chosen item's price with the other results.
     iterations += 1
     trace.check_iterations(iterations)
-    session["price_comparison"] = compare_prices(
-        session["selected_item"], session["search_results"]
-    )
+    session["price_comparison"] = call_tool("compare_prices", {
+        "selected_item": session["selected_item"],
+        "search_results": session["search_results"],
+    })
     trace.step(
-        "compare_prices",
+        "compare_prices (via MCP)",
         inputs={
             "selected_item": session["selected_item"]["title"],
             "search_result_count": len(session["search_results"]),
